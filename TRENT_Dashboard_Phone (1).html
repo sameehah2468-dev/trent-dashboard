@@ -1,0 +1,268 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TRENT – Piezo Dashboard (Phone)</title>
+<style>:root{color-scheme:dark;--bg:#0d1520;--panel:#152233;--panel2:#1b2d42;--edge:#2b4260;--txt:#e6edf5;--muted:#8fa3b8;--accent:#3fb6ff;--good:#35d07f;--warn:#ffb020;--bad:#ff4d4d}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.panel{background:var(--panel);border:1px solid var(--edge);border-radius:8px;padding:10px}.panel.np{padding:0;overflow:hidden}
+.cv{position:relative;width:100%}.cv canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.ttl{font-size:13px;font-weight:700;margin:0 0 6px}h2{margin:0 0 2px;font-size:13px;color:var(--accent);letter-spacing:.04em}
+.brand{color:var(--accent);font-weight:800}.sub{color:var(--muted)}.warn{color:var(--warn)}
+.row{padding:7px 0;border-bottom:1px solid rgba(43,66,96,.5)}.lab b{display:block;font-weight:500;font-size:13px}.lab small{color:var(--muted);font-size:11px}
+.num{background:var(--panel2);color:var(--txt);border:1px solid var(--edge);border-radius:6px;padding:5px 6px;font-size:14px;width:84px}
+.rng{width:100%;accent-color:var(--accent)}
+button{font:inherit;font-weight:700;font-size:13px;color:var(--txt);background:#27405a;border:1px solid var(--edge);border-radius:8px;padding:9px 10px;cursor:pointer}
+button:hover{filter:brightness(1.2)}button:active{transform:translateY(1px)}
+button.green{background:#2a8a55}button.blue{background:#2f5d8a}button.grey{background:#3a3f4a}button.on.bad{background:#8c2f2f}button.on.good{background:#2f6a4a}
+.kpis{display:grid;gap:8px}.kpi{background:var(--panel);border:1px solid var(--edge);border-radius:8px;padding:8px 10px}.kl{font-size:11px;color:var(--muted)}.kv{font-size:17px;font-weight:700;margin-top:3px}
+.meter{background:#1c232c;border:1.5px solid var(--edge);border-radius:10px;padding:8px}
+.lcd{background:#b7d3a0;color:#16260f;border-radius:7px;padding:7px 10px;font-family:ui-monospace,Menlo,Consolas,monospace;position:relative}
+.lcd small{display:block;font-size:10px;color:#26371e;font-family:system-ui,sans-serif}#mLive{font-size:30px;font-weight:700;text-align:right}
+#mState{position:absolute;left:10px;top:30px;font:700 11px system-ui,sans-serif;color:#26371e}.lcd .sec{display:flex;justify-content:space-between;font-size:12px}
+.cad{display:flex;align-items:center;justify-content:center;min-height:90px;text-align:center;color:var(--muted);font-size:12px}.cad img{max-width:100%;display:none;border-radius:6px}
+.cad label{color:var(--accent);cursor:pointer;text-decoration:underline}
+#status{font-size:13px;color:var(--muted);min-height:18px}#energy{font-size:12px}
+
+body{min-height:100vh}header{display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid var(--edge)}
+header .brand{font-size:26px}header h1{font-size:17px;margin:0}header .sub{font-size:12px}header .warn{margin-left:auto;font-size:12px}
+.app{display:grid;grid-template-columns:300px 1fr;gap:12px;padding:12px 16px;max-width:1700px;margin:0 auto;align-items:start}
+aside{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center}.row .rng{grid-column:1/3}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.btns .w{grid-column:1/3}
+main{display:grid;gap:10px;min-width:0}.kpis{grid-template-columns:repeat(6,1fr)}
+.r2{display:grid;grid-template-columns:1.9fr 1fr;gap:10px}.r3{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.col{display:grid;gap:10px;align-content:start}
+.bar{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+@media(max-width:1100px){.app{grid-template-columns:1fr}aside{position:static;max-height:none}.kpis{grid-template-columns:repeat(2,1fr)}.r2,.r3{grid-template-columns:1fr}}
+</style><style>
+header{padding:8px 12px;gap:8px;flex-wrap:wrap}header .brand{font-size:22px}header h1{font-size:14px}header .sub{display:none}header .warn{margin-left:0;font-size:11px;width:100%}
+.app{display:block;padding:8px;max-width:640px;margin:0 auto}
+main{display:flex;flex-direction:column;gap:8px}
+.stick{position:sticky;top:0;z-index:20;box-shadow:0 4px 10px rgba(0,0,0,.45)}
+.kpis{grid-template-columns:repeat(2,1fr)}.kv{font-size:16px}
+.r3{grid-template-columns:1fr}
+.btns{gap:8px}button{min-height:46px;font-size:14px}
+.num{width:96px;font-size:16px;padding:7px}.row{padding:9px 0}.lab b{font-size:14px}
+#mLive{font-size:28px}#status{font-size:13px}.bar{display:block}.bar>div{margin-bottom:4px}
+</style></head><body>
+<header><span class="brand">TRENT</span><div><h1>Self-Powered Railway Monitoring</h1><div class="sub">Piezoelectric cantilever harvester | live simulation dashboard</div></div><span class="warn">SIMULATION – values marked [A] are assumptions</span></header>
+<div class="app"><main>
+<div class="panel np stick"><div class="cv" style="aspect-ratio:100/39"><canvas id="sc"></canvas></div></div>
+<div class="panel"><div class="ttl">Railway track – live plan view (schematic loop)</div><div class="cv" style="aspect-ratio:253/102"><canvas id="tk"></canvas></div></div>
+<div class="panel"><div class="btns" style="margin-top:0"><button id="bShake" class="green w">PRODUCE VIBRATION (shaker)</button><button id="bDerail" class="w">Derailment scenario: OFF</button><button id="bSpring" class="w">Include buffer springs: OFF</button><button id="bPlay" class="blue">Pause</button><button id="bRestart" class="blue">Restart train</button><button id="bReset" class="grey w">Reset all values</button></div></div>
+<div class="bar"><div id="status">Ready.</div><div id="energy"></div></div>
+
+<div class="meter"><div class="lcd"><small>PIEZO VOLTAGE METER – AC V, open-circuit, per disc</small><div id="mLive">0.000 V</div><div id="mState">IDLE</div><div class="sec"><span id="mPk"></span><span id="mRms"></span></div></div></div>
+<div id="kpis" class="kpis"></div>
+<div class="r3"><div class="panel np"><div class="cv" style="aspect-ratio:16/10"><canvas id="fr"></canvas></div></div><div class="panel np"><div class="cv" style="aspect-ratio:16/10"><canvas id="wv"></canvas></div></div><div class="panel np"><div class="cv" style="aspect-ratio:16/10"><canvas id="cp"></canvas></div></div><div class="panel np"><div class="cv" style="aspect-ratio:16/10"><canvas id="tp"></canvas></div></div></div>
+
+<div class="panel"><h2>INPUT PARAMETERS</h2><div class="sub" style="font-size:12px">Type a value or drag the slider</div><div id="inputs"></div></div>
+<div class="panel"><div class="ttl">CAD model of the prototype</div><div class="cad"><img id="cadImg" alt="CAD side view"><span id="cadHint">Optional: <label>load project_side_view.png<input id="cadFile" type="file" accept="image/*" hidden></label></span></div></div>
+
+</main></div>
+<script>window.CFG={vw:100,cam:true};</script><script>(function(){
+const CFG=window.CFG||{vw:220,cam:false};
+const $=id=>document.getElementById(id);
+const C={B:.025,T:.001,L:.18,E:200e9,M:.0353,MEFF:.236,ETA:.25,EP:66e9,G31:11e-3,TP:2e-4,CP:20e-9,AX:2.5,TL:98,FAT:200,CAPF:1,VMAX:5,VT:3.3,EFF:.6,SHAKE:6,SP:[86,139],DF:4,ALARM:2.5,VMIN:.05,A20:1.96,G33:.025,AD:7.85e-5};
+const KS=79e9*Math.pow(.7e-3,4)/(8*Math.pow(7.14e-3-.7e-3,3)*6), IA=C.B*Math.pow(C.T,3)/12;
+const XS=135,XD=100,SX=[-10,210];
+const BG='#0d1520',PANEL='#152233',EDGE='#2b4260',TXT='#e6edf5',MUTED='#8fa3b8',ACCENT='#3fb6ff',GOOD='#35d07f',WARN='#ffb020',BAD='#ff4d4d';
+const SPEC=[['speed','Train speed','km/h',20,160,72,1],['axle','Axle load','t',16,21,20,1],['zeta','Damping ratio [A]','',.005,.2,.02,.005],['damage','Beam damage','% stiffness lost',0,40,0,1],['gap','Spring buffer gap [A]','mm',0,.5,.03,.005],['n_piezo','Number of piezo discs (CAD has 4)','',1,6,4,1],['f_shake','Shaker frequency (bench test)','Hz',1,100,25.5,.5],['trains_ph','Trains per hour [A]','',1,30,6,1],['warp','Animation speed','x',.5,8,2,.5]];
+
+/* ---------- physics ---------- */
+function core(p,dmg){const f_d=(p.speed/3.6)/C.AX,a=C.A20*p.axle/20,k=3*C.E*IA/Math.pow(C.L,3)*(1-dmg/100),me=C.MEFF*C.M;return{f_d,f_n:Math.sqrt(k/me)/(2*Math.PI),k,a};}
+/* Buffer springs: fixed to the platforms, a small gap away from the beam. They add no stiffness; they only tap the piezo disc when the beam closes the gap.
+   Elastic-impact estimate: contact speed v=w*sqrt(wa^2-gap^2), peak force F=v*sqrt(m_a*KS), contact time tc=pi*sqrt(m_a/KS), disc voltage V=g33*(F/A)*t. Amplitude is not limited by the stop (valid for light taps). */
+const PH=C.SP.map(mm=>{const a=mm/1000;return a*a*(3*C.L-a)/(2*Math.pow(C.L,3));});
+function tap(i,A,f){const ph=PH[i],g=p.gap*1e-3,wa=ph*A;if(!p.springs||!(wa>g))return{v:0,F:0,tc:0};const ma=C.MEFF*C.M/(ph*ph),v=2*Math.PI*f*Math.sqrt(wa*wa-g*g),F=v*Math.sqrt(ma*KS);return{v:C.G33*F/C.AD*C.TP,F,tc:Math.PI*Math.sqrt(ma/KS)};}
+function resp(p,f,dmg){const c=core(p,dmg==null?p.damage:dmg),r=f/c.f_n,Y=c.a/Math.pow(2*Math.PI*f,2);return Y*r*r/Math.sqrt(Math.pow(1-r*r,2)+Math.pow(2*p.zeta*r,2));}
+function atFreq(p,f){const dl=resp(p,f),sg=3*C.E*(C.T/2)*dl/(C.L*C.L),voc=C.G31*C.EP*C.ETA*(sg/C.E)*C.TP,xc=1/(2*Math.PI*f*C.CP);return[dl,sg/1e6,voc,voc*voc/(4*xc)];}
+function compute(p){const c=core(p,p.damage),b=core(p,0),f_d=c.f_d,f_n=c.f_n;
+ const [delta,sigma,voc,p1]=atFreq(p,f_d),[ds,ss,vs,ps]=atFreq(p,p.f_shake);
+ const tT=C.SP.map((_,i)=>tap(i,delta,f_d)),ptap=tT.reduce((a,q)=>a+f_d*.25*C.CP*q.v*q.v,0)/C.SP.length;
+ const ptot=(p1+ptap)*p.n_piezo,tp=C.TL/(p.speed/3.6),duty=Math.min(1,p.trains_ph*tp/3600),pavg=ptot*C.EFF*duty,shift=(b.f_n-f_n)/b.f_n*100,vder=voc*C.DF;
+ const et=.5*C.CAPF*C.VT*C.VT;
+ return{f_d,f_n,delta,sigma,voc,p1,ptap,vtap:Math.max(...tT.map(q=>q.v)),ftap:tT.some(q=>q.v>0)?f_d:0,ptot,tp,duty,pavg,shift,sf:C.FAT/Math.max(sigma,1e-12),vder,ok:(C.DF>=C.ALARM)&&(vder>=C.VMIN),delta_s:ds,sigma_s:ss,voc_s:vs,p_s:ps,days:pavg>0?et/pavg/86400:null};}
+function simCap(r){const n=1440,em=.5*C.CAPF*C.VMAX*C.VMAX,v=[0];let e=0;for(let i=0;i<n;i++){e=Math.min(e+r.pavg*3600,em);v.push(Math.sqrt(2*e/C.CAPF));}return v;}
+const fmtDays=d=>(d==null||d>36500)?'> 100 years':d>365?(d/365).toFixed(1)+' years':d.toFixed(1)+' days';
+const health=s=>s<3?['HEALTHY',GOOD]:s<8?['WARNING',WARN]:['FAULT',BAD];
+const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);};
+const hex=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16));
+function mix(a,b,t){t=Math.max(0,Math.min(1,t));const A=hex(a),B=hex(b);return'rgb('+A.map((v,i)=>Math.round(v+(B[i]-v)*t)).join(',')+')';}
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+/* ---------- state ---------- */
+const p={};let derailOn=false,paused=false,res,t,phase,phaseS=0,xF,vNow,derailed,tDer,alarm,missed,stopped,gap,hT,hA,hS,amp=0,ampS=0,shakeLeft=0;
+const DEF={};SPEC.forEach(s=>{p[s[0]]=s[5];DEF[s[0]]=s[5];});p.springs=false;
+function restart(){t=0;phase=0;xF=-8;vNow=p.speed/3.6;derailed=false;tDer=0;alarm=false;missed=false;stopped=0;gap=0;hT=[0];hA=[0];hS=[0];amp=0;}
+function say(m,c){const e=$('status');if(e){e.textContent=m;e.style.color=c||MUTED;}}
+
+/* ---------- canvases ---------- */
+const V={};
+function fit(id){const cv=$(id),r=cv.getBoundingClientRect(),d=Math.min(window.devicePixelRatio||1,2);cv.width=Math.max(1,Math.round(r.width*d));cv.height=Math.max(1,Math.round(r.height*d));V[id]={x:cv.getContext('2d'),w:r.width,h:r.height,d};}
+function rr(x,a,b,w,h,r){x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath();}
+function box(x,a,b,w,h,f,s,lw){x.fillStyle=f;x.fillRect(a,b,w,h);if(s){x.strokeStyle=s;x.lineWidth=lw||.25;x.strokeRect(a,b,w,h);}}
+function circ(x,cx,cy,r,f,s,lw){x.beginPath();x.arc(cx,cy,r,0,6.2832);if(f){x.fillStyle=f;x.fill();}if(s){x.strokeStyle=s;x.lineWidth=lw||.2;x.stroke();}}
+function txt(x,s,px,sx,sy,col,al,bold){x.fillStyle=col;x.font=(bold?'bold ':'')+px+'px system-ui,sans-serif';x.textAlign=al||'left';x.textBaseline='middle';x.fillText(s,sx,sy);}
+
+/* ---------- scene ---------- */
+const CARS=[['loco',20,8,-10],['coach',25,7.4,-33.5],['coach',25,7.4,-59.5],['coach',25,7.4,-85.5]],DT=[[10,.8,2],[-14,1.8,-1.5],[20,2.8,1],[-8,1,3]];
+const R=rng(4),STARS=[],TREES=[];for(let i=0;i<70;i++)STARS.push([-10+R()*220,10+R()*28,.15+R()*.4]);for(let xx=-14;xx<214;xx+=5.5)TREES.push([xx,7+R()*9,4+R()*3,R()]);
+let leds={green:0,blue:0,red:0},sig={green:0,red:0};
+function drawCar(x,k,ln,h){const b=1.7;rr(x,-ln/2,b,ln,h,1.4);x.fillStyle=k==='loco'?'#b8312f':'#dfe6ee';x.fill();x.strokeStyle='#0b0f14';x.lineWidth=.25;x.stroke();
+ box(x,-ln/2+.3,b+1.5,ln-.6,1.2,k==='loco'?'#f2c230':'#2b6cb0');
+ if(k==='loco'){box(x,ln/2-6.5,b+h-3.6,4.6,2.6,'#bfe3ff');box(x,-ln/2+2,b+h-3.2,3.2,2.2,'#2a3340');box(x,-ln/2+6.5,b+h-3.2,3.2,2.2,'#2a3340');circ(x,ln/2-.5,b+h*.35,.8,'#fff3b0');}
+ else for(let i=0;i<7;i++)box(x,-ln/2+2.2+i*3.2,b+h-3.6,2.1,2.3,'#8fb8dd');
+ for(const sg of[-1,1])for(const dx of[3.5,6.8])circ(x,sg*(ln/2-dx),.95,.95,'#222a33','#9aa6b3',.15);}
+function drawScene(){const v=V.sc;if(!v)return;const{x,w,h,d}=v,vw=CFG.vw,s=w/vw;let cl=SX[0];if(CFG.cam)cl=Math.max(SX[0],Math.min(SX[1]-vw,xF-vw*.45));
+ const P=(wx,wy)=>[(wx-cl)*s,h-(wy+12)*s];
+ x.setTransform(d,0,0,d,0,0);const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'#0a1424');g.addColorStop(.6,'#16304f');g.addColorStop(1,'#244a6e');x.fillStyle=g;x.fillRect(0,0,w,h);
+ x.setTransform(d*s,0,0,-d*s,-cl*s*d,d*(h-12*s));
+ x.fillStyle='#cfe3ff';for(const q of STARS){x.globalAlpha=.7;x.fillRect(q[0],q[1],q[2],q[2]);}x.globalAlpha=1;
+ circ(x,192,20,8,'rgba(255,244,207,.07)');circ(x,192,20,3.4,'rgba(255,244,207,.9)');
+ for(const q of TREES){x.fillStyle=mix('#0d2a24','#143b30',q[3]);x.beginPath();x.moveTo(q[0]-q[2],2);x.lineTo(q[0],2+q[1]);x.lineTo(q[0]+q[2],2);x.fill();}
+ box(x,-60,-12,330,14,'#2a2118');box(x,-60,-3.2,330,3.2,'#5a5348');x.fillStyle='#3a2f26';for(let a=-60;a<270;a+=2.2)x.fillRect(a,-3,.7,2.8);
+ box(x,-60,-.45,330,.9,'#c9d2dc');box(x,-60,-.7,330,.35,'#7d8792');
+ rr(x,XS-7,-10.5,14,7,.8);x.fillStyle='#202b38';x.fill();x.strokeStyle='#6c85a1';x.lineWidth=.25;x.stroke();
+ for(const[n,dx,c]of[['green',-3.5,GOOD],['blue',0,ACCENT],['red',3.5,BAD]]){const l=leds[n];circ(x,XS+dx,-8,2.4,c.replace('#','')&&'rgba('+hex(c).join(',')+','+.45*l+')');circ(x,XS+dx,-8,.95,mix('#2a3340',c,l),'#0b0f14',.15);}
+ box(x,149.7,0,.6,9.5,'#8a95a3');rr(x,148.4,9.2,3.2,8.6,.8);x.fillStyle='#10151c';x.fill();x.strokeStyle='#6c85a1';x.lineWidth=.2;x.stroke();
+ for(const[n,yy,c]of[['red',15.6,BAD],['green',11.4,GOOD]]){const l=sig[n];circ(x,150,yy,3.6,'rgba('+hex(c).join(',')+','+.5*l+')');circ(x,150,yy,1.25,mix('#2a3340',c,l),'#0b0f14',.15);}
+ const ramp=derailed?smooth((t-tDer)/1.6):0;
+ CARS.forEach((c,i)=>{const dt=DT[i];x.save();x.translate(xF+c[3]+dt[2]*ramp,dt[1]*ramp);x.rotate(dt[0]*ramp*Math.PI/180);drawCar(x,c[0],c[1],c[2]);x.restore();});
+ x.setTransform(d,0,0,d,0,0);
+ const fs=Math.max(8,Math.min(11,s*1.9)),lf=Math.max(5,s*1.5);
+ let q=P(XS,-5.1);txt(x,'TRENT unit',lf*1.1,q[0],q[1],MUTED,'center');
+ [['PWR',-3.5],['DATA',0],['ALARM',3.5]].forEach(a=>{const z=P(XS+a[1],-10);txt(x,a[0],lf*.8,z[0],z[1],MUTED,'center');});
+ txt(x,Math.round(p.speed)+' km/h  |  axle load '+p.axle+' t  |  '+(derailOn?'DERAILMENT SCENARIO':'normal running'),fs,8,h-10,TXT);
+ txt(x,'KTM line (simulation)',fs,w-8,h-10,MUTED,'right');
+ if(alarm){const pl=.5+.5*Math.sin(t*9);txt(x,'ALERT: ABNORMAL VIBRATION - POSSIBLE DERAILMENT',Math.max(10,Math.min(16,w/38)),w/2,18,pl>.4?BAD:'#ff9d9d','center',true);}
+ else if(missed)txt(x,'Derailment NOT detected (signal too weak)',Math.max(10,Math.min(14,w/42)),w/2,18,WARN,'center',true);}
+
+/* ---------- track (plan view of a complete closed loop; the 1-D train position xF is wrapped onto it) ---------- */
+function line(x,pts,c,lw){x.beginPath();pts.forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));x.strokeStyle=c;x.lineWidth=lw;x.stroke();}
+let live={v:0,tip:0,glow:0,tp:[[0,0],[0,0]]};
+const PW=324,LAT=[3,-4.5,6,-3.5];
+const TK=(function(){const cp=[[36,28],[100,16],[160,32],[214,20],[238,50],[214,82],[150,88],[96,72],[50,86],[18,58]],n=cp.length,pts=[];
+ for(let i=0;i<n;i++){const a=cp[(i+n-1)%n],b=cp[i],c=cp[(i+1)%n],d=cp[(i+2)%n];for(let j=0;j<40;j++){const u=j/40,u2=u*u,u3=u2*u;pts.push([0,1].map(k=>.5*(2*b[k]+(-a[k]+c[k])*u+(2*a[k]-5*b[k]+4*c[k]-d[k])*u2+(-a[k]+3*b[k]-3*c[k]+d[k])*u3)));}}
+ const N=pts.length,cum=[0];for(let i=1;i<=N;i++){const a=pts[i-1],b=pts[i%N];cum.push(cum[i-1]+Math.hypot(b[0]-a[0],b[1]-a[1]));}
+ const nr=pts.map((q,i)=>{const a=pts[(i+N-1)%N],b=pts[(i+1)%N],dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy)||1;return[-dy/l,dx/l];});
+ const off=o=>pts.map((q,i)=>[q[0]+nr[i][0]*o,q[1]+nr[i][1]*o]);
+ const R=rng(11),trees=[];for(let i=0;i<260&&trees.length<70;i++){const x=6+R()*241,y=6+R()*90;let m=1e9;for(const q of pts)m=Math.min(m,Math.hypot(q[0]-x,q[1]-y));if(m>10)trees.push([x,y,1.6+R()*1.6,R()]);}
+ return{pts,cum,len:cum[N],nr,rl:off(1.5),rr:off(-1.5),trees};})();
+function tkAt(f){f=((f%1)+1)%1;const L=TK.len*f,c=TK.cum,N=TK.pts.length;let lo=0,hi=N-1;while(lo<hi){const m=(lo+hi+1)>>1;if(c[m]<=L)lo=m;else hi=m-1;}
+ const a=TK.pts[lo],b=TK.pts[(lo+1)%N],sg=c[lo+1]-c[lo],t=sg>0?(L-c[lo])/sg:0;return{x:a[0]+(b[0]-a[0])*t,y:a[1]+(b[1]-a[1])*t,a:Math.atan2(b[1]-a[1],b[0]-a[0])};}
+const wf=wx=>(wx+8)/PW;
+function tkPoly(x,pts,c,lw,close){x.beginPath();pts.forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));if(close)x.closePath();x.strokeStyle=c;x.lineWidth=lw;x.stroke();}
+function drawTrack(){const v=V.tk;if(!v)return;const{x,w,h,d}=v,s=w/253,ks=TK.len/PW,ramp=derailed?smooth((t-tDer)/1.6):0,pl=.5+.5*Math.sin(t*9);
+ x.setTransform(d,0,0,d,0,0);x.fillStyle='#0f2a22';x.fillRect(0,0,w,h);
+ x.setTransform(d*s,0,0,d*s,0,0);
+ for(const q of TK.trees){x.fillStyle=mix('#0b1f19','#17402f',q[3]);x.beginPath();x.arc(q[0],q[1],q[2],0,6.2832);x.fill();}
+ tkPoly(x,TK.pts,'#3a3226',8,true);tkPoly(x,TK.pts,'#2a2118',6.4,true);
+ x.beginPath();for(let i=0;i<TK.pts.length;i+=3){const q=TK.pts[i],n=TK.nr[i];x.moveTo(q[0]-n[0]*2.4,q[1]-n[1]*2.4);x.lineTo(q[0]+n[0]*2.4,q[1]+n[1]*2.4);}x.strokeStyle='#4a3d30';x.lineWidth=.9;x.stroke();
+ tkPoly(x,TK.rl,'#c9d2dc',.5,true);tkPoly(x,TK.rr,'#c9d2dc',.5,true);
+ for(const[f,nm]of[[.2,'Station A'],[.7,'Station B']]){const q=tkAt(f);x.save();x.translate(q.x,q.y);x.rotate(q.a);x.fillStyle='#6c85a1';x.fillRect(-14,4.2,28,3.6);x.fillStyle='#9fb6cf';x.fillRect(-14,4.2,28,.8);x.restore();
+  const n=[-Math.sin(q.a),Math.cos(q.a)];txt(x,nm,3.4,q.x+n[0]*13,q.y+n[1]*13,MUTED,'center');}
+ const S=tkAt(wf(XS)),sn=[-Math.sin(S.a),Math.cos(S.a)],lvl=Math.max(amp,ampS);
+ x.beginPath();x.arc(S.x,S.y,5+lvl*9,0,6.2832);x.strokeStyle=alarm?'rgba(255,77,77,'+(.35+.4*pl)+')':'rgba(63,182,255,'+Math.min(.8,lvl)+')';x.lineWidth=.8;x.stroke();
+ const bx=S.x+sn[0]*11,by=S.y+sn[1]*11;x.beginPath();x.moveTo(S.x,S.y);x.lineTo(bx,by);x.strokeStyle='#6c85a1';x.lineWidth=.5;x.stroke();
+ rr(x,bx-7,by-4,14,8,1);x.fillStyle='#202b38';x.fill();x.strokeStyle='#6c85a1';x.lineWidth=.35;x.stroke();
+ for(const[n,dx,c]of[['green',-3.8,GOOD],['blue',0,ACCENT],['red',3.8,BAD]]){const l=leds[n];circ(x,bx+dx,by,1.9,'rgba('+hex(c).join(',')+','+.4*l+')');circ(x,bx+dx,by,.8,mix('#2a3340',c,l),'#0b0f14',.12);}
+ txt(x,'TRENT unit',3.4,bx,by-6.5,ACCENT,'center',true);
+ const G=tkAt(wf(150)),gn=[-Math.sin(G.a),Math.cos(G.a)],gx=G.x+gn[0]*8,gy=G.y+gn[1]*8;rr(x,gx-2,gy-4.4,4,8.8,.8);x.fillStyle='#10151c';x.fill();x.strokeStyle='#6c85a1';x.lineWidth=.3;x.stroke();
+ circ(x,gx,gy-2,1.2,mix('#2a3340',BAD,sig.red));circ(x,gx,gy+2,1.2,mix('#2a3340',GOOD,sig.green));
+ if(derailed){const D=tkAt(wf(XD));x.beginPath();x.moveTo(D.x,D.y-7);x.lineTo(D.x+5,D.y+3);x.lineTo(D.x-5,D.y+3);x.closePath();x.fillStyle='rgba(255,77,77,'+(.55+.45*pl)+')';x.fill();txt(x,'!',5,D.x,D.y-.8,'#fff','center',true);}
+ CARS.forEach((c,i)=>{const dt=DT[i],cen=xF+c[3]+dt[2]*ramp,A=tkAt(wf(cen-c[1]/2)),B=tkAt(wf(cen+c[1]/2)),mx=(A.x+B.x)/2,my=(A.y+B.y)/2,an=Math.atan2(B.y-A.y,B.x-A.x),Lc=Math.hypot(B.x-A.x,B.y-A.y),wd=c[0]==='loco'?6.2:5.4,ln=LAT[i]*ramp;
+  x.save();x.translate(mx-Math.sin(an)*ln,my+Math.cos(an)*ln);x.rotate(an+dt[0]*ramp*Math.PI/180);
+  rr(x,-Lc/2,-wd/2,Lc,wd,1.3);x.fillStyle=c[0]==='loco'?'#b8312f':'#dfe6ee';x.fill();x.strokeStyle='#0b0f14';x.lineWidth=.35;x.stroke();
+  if(c[0]==='loco'){x.fillStyle='#f2c230';x.fillRect(-Lc/2+1,-.5,Lc-2,1);x.fillStyle='#bfe3ff';x.fillRect(Lc/2-8,-wd*.3,5,wd*.6);circ(x,Lc/2-.6,0,.9,'#fff3b0');}
+  else{x.fillStyle='#8fb8dd';const nw=Math.floor((Lc-6)/5.2);for(let j=0;j<nw;j++)x.fillRect(-Lc/2+3+j*5.2,-wd*.28,3.4,wd*.56);}
+  x.restore();});
+ x.setTransform(d,0,0,d,0,0);
+ const fs=Math.max(9,Math.min(13,s*2.6)),cx=w*.5,cy=h*.5;
+ txt(x,Math.round(p.speed)+' km/h',Math.max(14,Math.min(26,s*6)),cx,cy-fs*1.1,TXT,'center',true);
+ txt(x,derailOn?'derailment scenario':'normal running',fs,cx,cy+fs*.6,derailOn?BAD:MUTED,'center');
+ txt(x,alarm?'ALERT: ABNORMAL VIBRATION':missed?'derailment NOT detected':'sensor '+(lvl>.01?'receiving vibration':'idle'),fs,cx,cy+fs*2,alarm?(pl>.4?BAD:'#ff9d9d'):missed?WARN:lvl>.01?ACCENT:MUTED,'center',alarm||missed);
+ txt(x,'KTM line (simulation) – schematic loop, train runs clockwise',fs*.8,8,h-8,MUTED,'left');}
+/* ---------- plots ---------- */
+function ticks(a,b,n){const st=(b-a)/n,m=Math.pow(10,Math.floor(Math.log10(st))),f=st/m,k=f<1.5?1:f<3?2:f<7?5:10,s=k*m,o=[];for(let v=Math.ceil(a/s)*s;v<=b+s*1e-6;v+=s)o.push(+v.toPrecision(6));return o;}
+function plot(id,o){const v=V[id];if(!v)return null;const{x,w,h,d}=v;x.setTransform(d,0,0,d,0,0);x.fillStyle=PANEL;x.fillRect(0,0,w,h);
+ const m={l:46,r:10,t:24,b:28},pw=w-m.l-m.r,ph=h-m.t-m.b,lx=o.logx,ly=o.logy,X=lx?Math.log10:a=>a,Y=ly?Math.log10:a=>a;
+ const fx=a=>m.l+(X(a)-X(o.x0))/(X(o.x1)-X(o.x0))*pw,fy=a=>m.t+ph-(Y(a)-Y(o.y0))/(Y(o.y1)-Y(o.y0))*ph;
+ txt(x,o.title,12,8,11,TXT,'left',true);
+ const xt=lx?decades(o.x0,o.x1):ticks(o.x0,o.x1,4),yt=ly?decades(o.y0,o.y1):ticks(o.y0,o.y1,4);
+ x.strokeStyle='rgba(143,163,184,.2)';x.lineWidth=1;x.beginPath();xt.forEach(a=>{x.moveTo(fx(a),m.t);x.lineTo(fx(a),m.t+ph);});yt.forEach(a=>{x.moveTo(m.l,fy(a));x.lineTo(m.l+pw,fy(a));});x.stroke();
+ xt.forEach(a=>txt(x,lx?a.toExponential(0).replace('e+0','e0'):fmt(a),9,fx(a),m.t+ph+10,MUTED,'center'));yt.forEach(a=>txt(x,ly?a.toExponential(0):fmt(a),9,m.l-4,fy(a),MUTED,'right'));
+ txt(x,o.xl,9,m.l+pw/2,h-5,MUTED,'center');x.save();x.translate(9,m.t+ph/2);x.rotate(-Math.PI/2);txt(x,o.yl,9,0,0,MUTED,'center');x.restore();
+ x.strokeStyle=EDGE;x.strokeRect(m.l,m.t,pw,ph);x.save();x.beginPath();x.rect(m.l,m.t,pw,ph);x.clip();return{x,fx,fy,m,pw,ph,end(){x.restore();}};}
+const fmt=a=>Math.abs(a)>=100?String(Math.round(a)):String(+a.toPrecision(3));
+function decades(a,b){const o=[];for(let e=Math.round(Math.log10(a));e<=Math.round(Math.log10(b));e++)o.push(Math.pow(10,e));return o;}
+function drawFR(){const ys=[],fs=[];for(let i=0;i<300;i++){const f=Math.pow(10,2.2*i/299);fs.push(f);ys.push(resp(p,f)*1e3);}
+ let a=Math.min(...ys),b=Math.max(...ys);a=Math.pow(10,Math.floor(Math.log10(a)));b=Math.pow(10,Math.ceil(Math.log10(b)));if(b/a<10)b=a*10;
+ const P=plot('fr',{title:'Frequency response',x0:1,x1:Math.pow(10,2.2),y0:a,y1:b,logx:1,logy:1,xl:'Hz',yl:'tip defl. (mm)'});if(!P)return;const{x}=P;
+ x.fillStyle='rgba(255,176,32,.15)';x.fillRect(P.fx(20/3.6/C.AX),P.m.t,P.fx(160/3.6/C.AX)-P.fx(20/3.6/C.AX),P.ph);
+ line(x,fs.map((f,i)=>[P.fx(f),P.fy(ys[i])]),ACCENT,1.8);
+ const vl=(f,c,dash)=>{x.setLineDash(dash);line(x,[[P.fx(f),P.m.t],[P.fx(f),P.m.t+P.ph]],c,1.4);x.setLineDash([]);};
+ vl(res.f_n,BAD,[5,3]);vl(res.f_d,GOOD,[]);vl(p.f_shake,'#b57cff',[2,3]);P.end();
+ txt(P.x,'red f_n   green train   purple shaker',9,P.m.l+P.pw-4,P.m.t+9,MUTED,'right');}
+function drawCap(){const vs=simCap(res),P=plot('cp',{title:'1 F capacitor charging (60 days)',x0:0,x1:60,y0:0,y1:C.VMAX*1.05,xl:'days',yl:'V'});if(!P)return;const{x}=P;
+ x.setLineDash([5,3]);line(x,[[P.m.l,P.fy(C.VT)],[P.m.l+P.pw,P.fy(C.VT)]],GOOD,1);x.setLineDash([]);
+ line(x,vs.map((v,i)=>[P.fx(i/24),P.fy(v)]),'#b57cff',1.8);P.end();txt(x,'train passes only, no load',9,P.m.l+P.pw/2,P.m.t+P.ph*.4,MUTED,'center');}
+function drawWave(){const lim=Math.max(res.voc*C.DF,res.voc_s,.05)*1.25,P=plot('wv',{title:'Piezo voltage (last 6 s)',x0:-6,x1:0,y0:-lim,y1:lim,xl:'seconds',yl:'V'});if(!P)return;const{x}=P;
+ const N=1800,tt=new Array(N);for(let i=0;i<N;i++)tt[i]=t-6+6*i/(N-1);const a=interpArr(tt,hT,hA),sA=interpArr(tt,hT,hS);
+ const th=Math.max(C.ALARM*res.voc,1e-9);x.setLineDash([5,3]);[th,-th].forEach(y=>line(x,[[P.m.l,P.fy(y)],[P.m.l+P.pw,P.fy(y)]],BAD,1));x.setLineDash([]);
+ line(x,tt.map((q,i)=>[P.fx(q-t),P.fy(res.voc*a[i]*Math.sin(2*Math.PI*res.f_d*q)+res.voc_s*sA[i]*Math.sin(2*Math.PI*p.f_shake*q))]),ACCENT,1);P.end();}
+function tapEv(f,D,H){const k0=Math.ceil((t-6)*f-.25),k1=Math.floor(t*f-.25),qs=[],pts=[];for(let k=k0;k<=k1;k++)qs.push((k+.25)/f);if(!qs.length)return pts;
+ const am=interpArr(qs,hT,H);qs.forEach((q,j)=>{const T=tap(1,D*am[j],f);if(!(T.v>0))return;const a=q-T.tc/2;pts.push([a,0]);for(let m=1;m<6;m++)pts.push([a+T.tc*m/6,T.v*1e3*Math.sin(Math.PI*m/6)]);pts.push([a+T.tc,0]);});return pts;}
+function drawTap(){const A=p.springs?tapEv(res.f_d,res.delta,hA):[],B=p.springs?tapEv(p.f_shake,res.delta_s,hS):[];let m=0;for(const q of A)m=Math.max(m,q[1]);for(const q of B)m=Math.max(m,q[1]);
+ const P=plot('tp',{title:'Spring tap pulses (last 6 s)',x0:-6,x1:0,y0:0,y1:Math.max(m*1.3,.01),xl:'seconds',yl:'mV'});if(!P)return;
+ line(P.x,A.map(q=>[P.fx(q[0]-t),P.fy(q[1])]),ACCENT,1.2);line(P.x,B.map(q=>[P.fx(q[0]-t),P.fy(q[1])]),'#b57cff',1.2);P.end();
+ if(!m)txt(P.x,p.springs?'no contact (beam stays inside the gap)':'buffer springs OFF',10,P.m.l+P.pw/2,P.m.t+P.ph/2,MUTED,'center');}
+function interpArr(tt,T,A){const o=new Array(tt.length),n=T.length;let j=0;for(let i=0;i<tt.length;i++){const q=tt[i];if(q<T[0]){o[i]=0;continue;}if(q>=T[n-1]){o[i]=A[n-1];continue;}while(j<n-2&&T[j+1]<q)j++;const f=(q-T[j])/((T[j+1]-T[j])||1);o[i]=A[j]+(A[j+1]-A[j])*f;}return o;}
+
+/* ---------- parameters / UI ---------- */
+function updateParams(){res=compute(p);const r=res,sfc=r.sf>=3?GOOD:r.sf>=1.5?WARN:BAD,st=health(r.shift),slow=r.days==null||r.days>365;
+ const cards=[['Train vibration frequency',r.f_d.toFixed(1)+' Hz',ACCENT],['Beam natural frequency',r.f_n.toFixed(1)+' Hz',ACCENT],['Tip deflection (train)',(r.delta*1e3).toFixed(3)+' mm',TXT],['Root stress (train)',r.sigma.toFixed(1)+' MPa',sfc],['Fatigue safety factor',r.sf.toFixed(1),sfc],['Open-circuit voltage (train)',r.voc.toFixed(3)+' V',TXT],['Spring taps (train, per disc)',!p.springs?'springs OFF':r.ftap>0?r.ftap.toFixed(1)+' /s':'no contact',r.ftap>0?ACCENT:MUTED],['Tap voltage (train, peak)',r.vtap>0?(r.vtap*1e3).toFixed(2)+' mV':'–',TXT],['Harvested power, '+p.n_piezo+' discs',(r.ptot*1e6).toFixed(3)+' µW',TXT],['Average charging power',(r.pavg*1e6).toFixed(4)+' µW',slow?BAD:GOOD],['Time to charge 1 F to '+C.VT+' V',fmtDays(r.days),slow?BAD:GOOD],['Beam health ('+r.shift.toFixed(1)+'% freq. drop)',st[0],st[1]]];
+ $('kpis').innerHTML=cards.map(c=>'<div class="kpi"><div class="kl">'+c[0]+'</div><div class="kv" style="color:'+c[2]+'">'+c[1]+'</div></div>').join('');
+ const e=$('energy');e.textContent='Charging: '+(r.pavg*1e6).toFixed(4)+' µW average from '+p.n_piezo+' discs at '+p.trains_ph+' trains/h, about '+fmtDays(r.days)+' to reach '+C.VT+' V. Indicator lights demonstrate the signal.'+(p.springs?' Spring taps included.':'');e.style.color=slow?WARN:GOOD;
+ drawFR();drawCap();}
+function buildInputs(){const c=$('inputs');SPEC.forEach(s=>{const[k,l,u,lo,hi,df,st]=s,row=document.createElement('div');row.className='row';
+ row.innerHTML='<div class="lab"><b>'+l+'</b><small>range '+lo+' – '+hi+' '+u+'</small></div><input class="num" type="number" inputmode="decimal" min="'+lo+'" max="'+hi+'" step="'+st+'" value="'+df+'"><input class="rng" type="range" min="'+lo+'" max="'+hi+'" step="'+st+'" value="'+df+'">';
+ const n=row.querySelector('.num'),g=row.querySelector('.rng');
+ const apply=src=>{let v=parseFloat(String(src.value).replace(',','.'));if(isNaN(v)){say("'"+src.value+"' is not a number, keeping "+p[k],BAD);n.value=g.value=p[k];return;}const v2=Math.min(Math.max(v,lo),hi),vv=(k==='axle'||k==='n_piezo')?Math.round(v2):v2;if(vv!==v)say(l+' limited to '+lo+' – '+hi,WARN);p[k]=vv;n.value=g.value=vv;if(k==='speed')vNow=derailed?vNow:vv/3.6;updateParams();};
+ n.addEventListener('change',()=>apply(n));g.addEventListener('input',()=>{n.value=g.value;apply(g);});c.appendChild(row);row._set=v=>{n.value=g.value=v;};row.dataset.k=k;});}
+function setBtn(id,label,on,cls){const b=$(id);if(!b)return;b.textContent=label;b.classList.toggle(cls||'on',on);}
+function bind(id,fn){const b=$(id);if(b)b.addEventListener('click',fn);}
+function wire(){
+ bind('bShake',()=>{shakeLeft=C.SHAKE;say('Shaker ON at '+p.f_shake+' Hz: the beam is vibrating, read the voltage on the meter (beam f_n = '+res.f_n.toFixed(1)+' Hz).',GOOD);});
+ bind('bDerail',()=>{derailOn=!derailOn;setBtn('bDerail','Derailment scenario: '+(derailOn?'ON':'OFF'),derailOn,'bad');restart();say('Derailment scenario '+(derailOn?'ON':'OFF')+'. Train restarted.',derailOn?BAD:MUTED);updateParams();});
+ bind('bSpring',()=>{p.springs=!p.springs;setBtn('bSpring','Include buffer springs: '+(p.springs?'ON':'OFF'),p.springs,'good');updateParams();});
+ bind('bPlay',()=>{paused=!paused;setBtn('bPlay',paused?'Play':'Pause',false);});
+ bind('bRestart',()=>{restart();say('Train restarted.',MUTED);});
+ bind('bReset',()=>{SPEC.forEach(s=>p[s[0]]=s[5]);document.querySelectorAll('#inputs .row').forEach(r=>r._set(DEF[r.dataset.k]));p.springs=false;derailOn=false;setBtn('bDerail','Derailment scenario: OFF',false,'bad');setBtn('bSpring','Include buffer springs: OFF',false,'good');restart();updateParams();say('All values reset.',MUTED);});
+ const f=$('cadFile');if(f)f.addEventListener('change',()=>{const fl=f.files[0];if(!fl)return;const im=$('cadImg');im.src=URL.createObjectURL(fl);im.style.display='block';$('cadHint').style.display='none';});}
+
+/* ---------- animation ---------- */
+function step(rd){const v0=p.speed/3.6;
+ if(!paused){const dt=rd*p.warp;t+=dt;phase+=2*Math.PI*Math.min(res.f_d,3)*dt;phaseS+=2*Math.PI*Math.min(p.f_shake,3)*dt;
+  if(shakeLeft>0){shakeLeft=Math.max(0,shakeLeft-dt);ampS=smooth((C.SHAKE-shakeLeft)/.4)*smooth(shakeLeft/.8);if(shakeLeft===0)say('Shaker stopped.',MUTED);}else ampS=0;
+  if(gap>0){gap-=dt;if(gap<=0){restart();return;}}
+  else{if(derailOn&&!derailed&&xF>=XD){derailed=true;tDer=t;say('DERAILMENT: the train has left the rails near the sensor.',BAD);}
+   if(derailed){vNow=v0*Math.exp(-(t-tDer)/2.2);if(vNow<.2){vNow=0;stopped+=dt;if(stopped>7)gap=.01;}}else vNow=v0;
+   xF+=vNow*dt;if(xF-C.TL>SX[1]+8)gap=2;
+   if(derailed&&!alarm&&!missed&&(t-tDer)>.7){if(res.ok){alarm=true;say('ALARM: the beam signal exceeded '+C.ALARM+'x the normal level, derailment detected.',BAD);}else{missed=true;say('Derailment NOT detected: beam signal below the comparator threshold.',WARN);}}}
+  const back=xF-C.TL,dd=(back<=XS&&XS<=xF)?0:Math.min(Math.abs(XS-back),Math.abs(XS-xF)),env=Math.exp(-Math.pow(dd/14,2)),sf=v0>0?vNow/v0:0;
+  amp=env*sf*(1+(C.DF-1)*(derailed?1:0));hT.push(t);hA.push(amp);hS.push(ampS);while(hT.length&&hT[0]<t-8){hT.shift();hA.shift();hS.shift();}}
+ const pl=.5+.5*Math.sin(t*9),lvl=Math.max(amp,ampS);
+ leds.green=alarm?0:Math.min(1,lvl*3);leds.blue=(lvl>.08&&(Math.floor(t*6)%2===0))?1:0;leds.red=alarm?.35+.65*pl:0;sig.green=alarm?0:1;sig.red=alarm?.35+.65*pl:0;
+ const s1=Math.sin(phase),s2=Math.sin(phaseS),dT=res.delta*1e3*amp,dS=res.delta_s*1e3*ampS;
+ live.tip=Math.max(-19,Math.min(19,15*Math.tanh(dT/1.5)*s1+15*Math.tanh(dS/1.5)*s2));
+ live.v=res.voc*amp*s1+res.voc_s*ampS*s2;const vref=Math.max(res.voc,res.voc_s*(ampS>.01?1:0),1e-9);live.glow=lvl>.01?Math.tanh(Math.abs(live.v)/(1.2*vref)):0;
+ live.tp=[[0,0],[0,0]];if(p.springs){const gm=p.gap*1e-3,aT=res.delta*amp,aS=res.delta_s*ampS;C.SP.forEach((_,i)=>{const wm=PH[i]*(aT+aS),wr=PH[i]*(aT*s1+aS*s2);if(wm>gm)live.tp[i][wr>0?0:1]=Math.min(1,Math.max(0,(Math.abs(wr)-gm)/(wm-gm)));});}
+ let At=0,As=0;for(let i=0;i<hT.length;i++)if(hT[i]>=t-1.5){At=Math.max(At,hA[i]);As=Math.max(As,hS[i]);}
+ $('mLive').textContent=(live.v>=0?'+':'')+live.v.toFixed(3)+' V';$('mPk').textContent='Vpk  '+(res.voc*At+res.voc_s*As).toFixed(3)+' V';$('mRms').textContent='Vrms '+Math.sqrt(Math.pow(res.voc*At,2)/2+Math.pow(res.voc_s*As,2)/2).toFixed(3)+' V';
+ $('mState').innerHTML=ampS>.01?'SHAKER<br>'+p.f_shake.toFixed(1)+' Hz':amp>.01?'TRAIN<br>'+res.f_d.toFixed(1)+' Hz':'IDLE';
+ drawScene();drawTrack();drawWave();drawTap();}
+function init(){buildInputs();wire();restart();res=compute(p);
+ ['sc','tk','fr','wv','cp','tp'].forEach(id=>fit(id));updateParams();
+ let rt;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(()=>{['sc','tk','fr','wv','cp','tp'].forEach(id=>fit(id));drawFR();drawCap();},60);}).observe(document.body);
+ let last=performance.now();(function loop(ts){const rd=Math.min((ts-last)/1000,.1);last=ts;step(rd);requestAnimationFrame(loop);})(last);}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script></body></html>
